@@ -71,3 +71,10 @@ answers for them. Save CareCall's number in their Contacts so it rings normally.
 Only call people who have agreed to receive these automated calls.
 
 Data lives in `data.json` next to the server.
+
+## Team
+
+- Dennis Wu ([@denwuuuu](https://github.com/denwuuuu))
+- Harris Chan ([@harrisjchan](https://github.com/harrisjchan))
+
+Built with help from [Claude Code](https://claude.com/claude-code).
