@@ -6,10 +6,13 @@ pick up, the call is flagged, and the app calls again on your schedule.
 ## Start it
 
 ```bash
-cd ~/Desktop/underhood/CareCall && node server.js
+git clone https://github.com/denwuuuu/CareCall.git
+cd CareCall
+npm install
+node server.js
 ```
 
-Then open http://127.0.0.1:8790. No `npm install` needed (Node 20+).
+Then open http://127.0.0.1:8790 (Node 20+).
 
 Without Twilio keys it runs in **simulation**: calls "ring" on the page and you
 play the other person (pick up, let it ring, voicemail, busy). Nobody is phoned.
