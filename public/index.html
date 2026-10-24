@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CareCall</title>
+<style>
+:root {
+  --bg: #f6f3ee; --card: #ffffff; --ink: #1f2328; --muted: #6a6f76; --line: #e4ded4;
+  --accent: #2f6f5e; --accent-ink: #ffffff; --accent-soft: #e3efe9;
+  --warn: #b4441f; --warn-soft: #fbe9e2; --ok: #2f7a3e; --ok-soft: #e4f2e6;
+  --ring: #c58a12; --ring-soft: #fbf1dc;
+  --radius: 14px; --shadow: 0 1px 2px rgba(0,0,0,.05), 0 4px 14px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15171a; --card: #1e2125; --ink: #ecebe8; --muted: #9aa0a6; --line: #30343a;
+    --accent: #5fb49b; --accent-ink: #0f1a16; --accent-soft: #1f302a;
+    --warn: #f08a66; --warn-soft: #3a231b; --ok: #7cc78b; --ok-soft: #1c2e20;
+    --ring: #e8b54a; --ring-soft: #33291a; --shadow: none;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+header { display: flex; align-items: center; gap: 12px; padding: 16px 24px; border-bottom: 1px solid var(--line); background: var(--card); position: sticky; top: 0; z-index: 5; }
+header h1 { font-size: 22px; margin: 0; letter-spacing: -.01em; }
+header h1 span { color: var(--accent); }
+.badge { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 99px; text-transform: uppercase; letter-spacing: .04em; }
+.badge.sim { background: var(--ring-soft); color: var(--ring); }
+.badge.live { background: var(--ok-soft); color: var(--ok); }
+header .spacer { flex: 1; }
+main { max-width: 1180px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 860px) { main { grid-template-columns: 1fr; padding: 16px; } header { padding: 12px 16px; } }
+section { margin-bottom: 24px; }
+h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+h2 .count { background: var(--warn); color: #fff; border-radius: 99px; font-size: 12px; padding: 1px 8px; letter-spacing: 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 18px; margin-bottom: 12px; }
+.muted { color: var(--muted); }
+.small { font-size: 14px; }
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.between { justify-content: space-between; }
+button, .btn { font: inherit; font-size: 15px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 8px 14px; cursor: pointer; min-height: 40px; }
+button:hover { border-color: var(--muted); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+button.danger { color: var(--warn); }
+button.ghost { border-color: transparent; background: transparent; padding: 6px 10px; min-height: 34px; color: var(--muted); }
+button.ghost:hover { color: var(--ink); background: var(--bg); }
+button:disabled { opacity: .5; cursor: default; }
+.empty { text-align: center; padding: 28px 18px; color: var(--muted); }
+
+.flag { border-color: var(--warn); background: var(--warn-soft); }
+.flag h3 { margin: 0 0 4px; font-size: 18px; color: var(--warn); }
+.flag.resolved { border-color: var(--line); background: var(--card); }
+.flag.resolved h3 { color: var(--ok); }
+.flag .next { margin: 10px 0; font-weight: 600; }
+.flag input[type=datetime-local] { font: inherit; padding: 7px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+
+.ringing { border-color: var(--ring); background: var(--ring-soft); }
+.ringing h3 { margin: 0 0 4px; color: var(--ring); font-size: 18px; }
+.ringing .phone-icon { display: inline-block; animation: ring 1s infinite; }
+@keyframes ring { 0%,100% { transform: rotate(0) } 25% { transform: rotate(-14deg) } 75% { transform: rotate(14deg) } }
+@media (prefers-reduced-motion: reduce) { .ringing .phone-icon { animation: none; } }
+
+.person h3 { margin: 0; font-size: 20px; }
+.sched { border-top: 1px solid var(--line); padding: 12px 0 4px; margin-top: 12px; display: flex; gap: 12px; align-items: flex-start; }
+.sched.off { opacity: .55; }
+.sched .info { flex: 1; min-width: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+.chip { background: var(--accent-soft); color: var(--accent); border-radius: 8px; padding: 2px 9px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.days { display: flex; gap: 3px; margin: 4px 0; }
+.days span { width: 26px; text-align: center; font-size: 12px; font-weight: 600; border-radius: 6px; padding: 2px 0; background: var(--bg); color: var(--muted); }
+.days span.on { background: var(--accent); color: var(--accent-ink); }
+
+.list { list-style: none; padding: 0; margin: 0; }
+.list li { padding: 10px 0; border-bottom: 1px solid var(--line); display: flex; gap: 10px; align-items: baseline; }
+.list li:last-child { border-bottom: 0; }
+.list .when { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 92px; }
+.list .what { flex: 1; min-width: 0; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; transform: translateY(-1px); }
+.dot.answered { background: var(--ok); } .dot.missed { background: var(--warn); } .dot.ringing, .dot.calling, .dot.in-progress { background: var(--ring); }
+.tag { font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 6px; background: var(--bg); color: var(--muted); }
+.turn { margin-top: 6px; padding-left: 10px; border-left: 2px solid var(--line); }
+.summary { margin-top: 6px; font-size: 14px; }
+.concern { margin-top: 6px; font-size: 14px; color: var(--warn); font-weight: 600; }
+details.chat { margin-top: 6px; font-size: 14px; }
+details.chat summary { cursor: pointer; color: var(--accent); }
+details.chat p { margin: 4px 0; }
+.tag.retry { background: var(--warn-soft); color: var(--warn); }
+
+dialog { border: 0; border-radius: 18px; padding: 0; width: min(560px, calc(100vw - 32px)); background: var(--card); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+dialog::backdrop { background: rgba(20, 22, 25, .45); }
+dialog form { padding: 22px 24px; max-height: 85vh; overflow: auto; }
+dialog h2 { font-size: 20px; text-transform: none; letter-spacing: 0; color: var(--ink); margin-bottom: 16px; }
+label { display: block; font-weight: 600; margin: 14px 0 6px; }
+label.inline { display: flex; align-items: center; gap: 8px; font-weight: 500; margin: 10px 0; }
+.hint { font-size: 13px; color: var(--muted); font-weight: 400; margin-top: 4px; }
+input[type=text], input[type=tel], input[type=number], input[type=time], select, textarea { font: inherit; width: 100%; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+input[type=number] { width: 80px; }
+input[type=checkbox], input[type=radio] { width: 18px; height: 18px; accent-color: var(--accent); }
+textarea { min-height: 80px; resize: vertical; }
+.times { display: flex; flex-wrap: wrap; gap: 8px; }
+.times .t { display: flex; align-items: center; gap: 2px; }
+.times input { width: 130px; }
+.daypick { display: flex; gap: 6px; flex-wrap: wrap; }
+.daypick button { width: 48px; padding: 8px 0; font-weight: 600; }
+.daypick button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.presets { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+.presets button { font-size: 13px; min-height: 32px; padding: 4px 10px; }
+.topics { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.topics button { font-size: 14px; min-height: 36px; padding: 6px 12px; border-radius: 99px; }
+.topics button.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.radio { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; font-weight: 500; }
+.radio input { margin-top: 3px; }
+.retrybox { background: var(--bg); border-radius: 12px; padding: 4px 14px 12px; margin-top: 8px; }
+.retrybox .row { font-weight: 500; }
+.actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; }
+.error { color: var(--warn); font-weight: 600; min-height: 1.4em; margin-top: 10px; }
+#toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 10px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: calc(100vw - 32px); }
+#toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Care<span>Call</span></h1>
+  <span id="modeBadge" class="badge"></span>
+  <div class="spacer"></div>
+  <button class="ghost" id="settingsBtn">Settings</button>
+  <button class="primary" id="addPersonBtn">+ Add person</button>
+</header>
+
+<main>
+  <div>
+    <section id="ringingSection"></section>
+    <section>
+      <h2>Missed-call alerts <span id="flagCount"></span></h2>
+      <div id="flags"></div>
+    </section>
+    <section>
+      <h2>People &amp; call schedules</h2>
+      <div id="people"></div>
+    </section>
+  </div>
+  <div>
+    <section>
+      <h2>Upcoming calls</h2>
+      <div class="card"><ul class="list" id="upcoming"></ul></div>
+    </section>
+    <section>
+      <h2>Call history</h2>
+      <div class="card"><ul class="list" id="history"></ul></div>
+    </section>
+  </div>
+</main>
+
+<dialog id="personDlg"><form method="dialog" id="personForm">
+  <h2 id="personTitle">Add person</h2>
+  <label for="pName">Name</label>
+  <input type="text" id="pName" placeholder="e.g. Grandma Lin" required>
+  <label for="pPhone">Phone number</label>
+  <input type="tel" id="pPhone" placeholder="+1 555 123 4567" required>
+  <div class="hint">10-digit numbers are treated as US/Canada. Use +country code for others.</div>
+  <label for="pTz">Their time zone</label>
+  <select id="pTz"></select>
+  <div class="hint">Calls go out at the times you set in <em>their</em> time zone.</div>
+  <label for="pNotes">Notes (optional)</label>
+  <input type="text" id="pNotes" placeholder="e.g. Hard of hearing — let it ring">
+  <div class="error" id="personErr"></div>
+  <div class="actions"><button type="button" data-close>Cancel</button><button class="primary" type="submit">Save</button></div>
+</form></dialog>
+
+<dialog id="schedDlg"><form method="dialog" id="schedForm">
+  <h2 id="schedTitle">New call schedule</h2>
+  <label>Call times each day</label>
+  <div class="times" id="sTimes"></div>
+  <button type="button" class="ghost" id="addTime" style="margin-top:6px">+ Add another time</button>
+
+  <label for="sTz">These times are in</label>
+  <select id="sTz"></select>
+  <div class="hint" id="sTzPreview"></div>
+
+  <label>Repeat on</label>
+  <div class="daypick" id="sDays"></div>
+  <div class="presets">
+    <button type="button" data-preset="0,1,2,3,4,5,6">Every day</button>
+    <button type="button" data-preset="1,2,3,4,5">Weekdays</button>
+    <button type="button" data-preset="0,6">Weekends</button>
+  </div>
+
+  <label>What happens when they pick up</label>
+  <label class="radio"><input type="radio" name="mode" value="checkin" checked>
+    <span>Have a check-in chat<div class="hint">A natural voice asks your questions one at a time and listens to each answer.</div></span></label>
+  <label class="radio"><input type="radio" name="mode" value="connect">
+    <span>Connect them to me<div class="hint">After they answer, the app rings your phone (set in Settings) and joins you.</div></span></label>
+
+  <div id="checkinOpts">
+    <label>How it talks</label>
+    <label class="radio"><input type="radio" name="style" value="chat" checked>
+      <span>Chat naturally<div class="hint" id="styleChatHint">An AI has a real conversation: small talk, follow-up questions, and it covers your topics along the way. It flags anything worrying and sends you a summary.</div></span></label>
+    <label class="radio"><input type="radio" name="style" value="script">
+      <span>Follow my lines exactly<div class="hint">Says each line below in order and waits for an answer.</div></span></label>
+
+    <label>What to ask</label>
+    <div class="hint" style="margin-top:0">Tap to add or remove a question.</div>
+    <div class="topics" id="sTopics"></div>
+    <div class="row" style="margin-top:8px">
+      <input type="text" id="sCustom" placeholder="Write your own question, e.g. Did you call your sister?" style="flex:1;min-width:0">
+      <button type="button" id="sAddCustom">Add</button>
+    </div>
+    <label for="sLines" id="sLinesLabel">The full call, one line per row</label>
+    <textarea id="sLines" rows="5"></textarea>
+    <div class="hint" id="sLinesHint">After each line it waits for them to answer before saying the next. {name} and {caller} are filled in for you.</div>
+    <label for="sGoodbye">How to say goodbye</label>
+    <input type="text" id="sGoodbye">
+    <div class="hint">If they go quiet for 10 seconds it says “Take your time, I'm still here” and waits 5 more. Still nothing? It rings you.</div>
+  </div>
+
+  <label>If they don't pick up</label>
+  <div class="retrybox">
+    <label class="inline"><input type="checkbox" id="sRetry" checked> Flag it and call again automatically</label>
+    <div class="row" id="retryRow">after <input type="number" id="sAfter" min="1" max="1440" value="15"> minutes, up to <input type="number" id="sMax" min="2" max="10" value="3"> calls in total</div>
+    <div class="hint">A missed call is always flagged. You can change the next call time from the alert.</div>
+  </div>
+
+  <label class="inline"><input type="checkbox" id="sActive" checked> Schedule is on</label>
+  <div class="error" id="schedErr"></div>
+  <div class="actions"><button type="button" data-close>Cancel</button><button class="primary" type="submit">Save schedule</button></div>
+</form></dialog>
+
+<dialog id="settingsDlg"><form method="dialog" id="settingsForm">
+  <h2>Settings</h2>
+  <label for="cName">Your name</label>
+  <input type="text" id="cName" placeholder="e.g. Dennis">
+  <div class="hint">Used on the call: “Dennis asked me to give you a call…”</div>
+  <label for="cPhone">Your phone number</label>
+  <input type="tel" id="cPhone" placeholder="+1 555 987 6543">
+  <div class="hint">CareCall rings this number if they stop answering, and for “Connect them to me” calls.</div>
+  <label for="cVoice">Voice</label>
+  <select id="cVoice"></select>
+  <label class="inline"><input type="checkbox" id="cPush"> Send alerts to my phone with the ntfy app</label>
+  <div class="hint">In ntfy, tap <strong>+</strong> and subscribe to this topic (keep it private: anyone with the name can read the alerts):</div>
+  <div class="row" style="margin-top:6px"><input type="text" id="cTopic" readonly style="flex:1;min-width:0"><button type="button" id="copyTopic">Copy</button><button type="button" id="testPush">Send test</button></div>
+  <label class="inline"><input type="checkbox" id="cSms"> Text me when a call is missed</label>
+  <div class="hint" id="smsHint"></div>
+  <label class="inline"><input type="checkbox" id="cNotify"> Show desktop notifications while this page is open</label>
+  <div class="error" id="settingsErr"></div>
+  <div class="actions"><button type="button" data-close>Cancel</button><button class="primary" type="submit">Save</button></div>
+</form></dialog>
+
+<div id="toast"></div>
+
+<script>
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let S = null;
+let editingPerson = null, editingSched = null, schedPerson = null, schedDays = new Set();
+let seenFlags = null;
+
+async function api(method, path, body) {
+  const res = await fetch(path, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || 'Request failed');
+  S = json; render();
+  return json;
+}
+async function refresh() {
+  try { const r = await fetch('/api/state'); if (r.ok) { S = await r.json(); render(); } } catch {}
+}
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 3000); }
+async function act(fn, okMsg) { try { await fn(); if (okMsg) toast(okMsg); } catch (e) { toast(e.message); } }
+
+const person = (id) => S.people.find((p) => p.id === id);
+const sched = (id) => S.schedules.find((s) => s.id === id);
+const fmtTime = (hhmm) => { const [h, m] = hhmm.split(':').map(Number); return new Date(2000, 0, 1, h, m).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); };
+function fmtWhen(ms, tz) {
+  const d = new Date(ms), now = new Date();
+  const opts = { hour: 'numeric', minute: '2-digit' };
+  const sameDay = d.toDateString() === now.toDateString();
+  const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
+  let s = d.toLocaleTimeString([], opts);
+  if (!sameDay) s = (d.toDateString() === tomorrow.toDateString() ? 'Tomorrow ' : d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) + ', ') + s;
+  return s;
+}
+function theirTime(ms, tz) {
+  const mine = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (!tz || tz === mine) return '';
+  return ` · ${new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', timeZone: tz })} their time`;
+}
+function daysText(days) {
+  const k = [...days].sort().join(',');
+  if (k === '0,1,2,3,4,5,6') return 'Every day';
+  if (k === '1,2,3,4,5') return 'Weekdays';
+  if (k === '0,6') return 'Weekends';
+  return days.map((d) => DAYS[d]).join(', ');
+}
+function toLocalInput(ms) { const d = new Date(ms - new Date(ms).getTimezoneOffset() * 60e3); return d.toISOString().slice(0, 16); }
+
+function render() {
+  if (!S) return;
+  const badge = $('modeBadge');
+  badge.className = 'badge ' + (S.mode === 'live' ? 'live' : 'sim');
+  badge.textContent = S.mode === 'live' ? 'Live calls' : 'Simulation';
+  badge.title = S.mode === 'live' ? 'Real phone calls are placed through Twilio' : 'No real calls: add Twilio keys in config.env to go live';
+  renderRinging(); renderFlags(); renderPeople(); renderUpcoming(); renderHistory();
+  notifyNewFlags();
+}
+
+function renderRinging() {
+  const active = S.calls.filter((c) => ['calling', 'ringing', 'in-progress'].includes(c.status));
+  if (!active.length) { $('ringingSection').innerHTML = ''; return; }
+  $('ringingSection').innerHTML = `<h2>Calling now</h2>` + active.map((c) => {
+    const p = person(c.personId) || { name: 'Unknown' };
+    const sim = !c.live;
+    return `<div class="card ringing">
+      <h3><span class="phone-icon">☎</span> Calling ${esc(p.name)}${c.attempt > 1 ? ` — try ${c.attempt}` : ''}…</h3>
+      <div class="muted small">${esc(p.phone || '')} · ${c.mode === 'connect' ? 'will connect to you' : '“' + esc((c.lines || [])[0] || '') + '”'}</div>
+      ${sim ? `<div class="hint" style="margin:10px 0 6px">Simulation — pretend to be ${esc(p.name)}:</div>
+      <div class="row">
+        <button class="primary" onclick="sim('${c.id}','answer')">Pick up &amp; answer</button>
+        <button onclick="sim('${c.id}','silent')">Pick up, go quiet</button>
+        <button onclick="sim('${c.id}','noanswer')">Let it ring</button>
+        <button onclick="sim('${c.id}','voicemail')">Voicemail</button>
+        <button onclick="sim('${c.id}','busy')">Busy</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+window.sim = (id, action) => act(() => api('POST', `/api/sim/${id}`, { action }));
+
+function renderFlags() {
+  // Don't wipe a time the user is typing into an alert's date picker.
+  if ($('flags').contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
+  const open = S.flags.filter((f) => f.status === 'open');
+  $('flagCount').innerHTML = open.length ? `<span class="count">${open.length}</span>` : '';
+  if (!S.flags.length) { $('flags').innerHTML = `<div class="card empty">No missed calls. 🎉</div>`; return; }
+  $('flags').innerHTML = S.flags.map((f) => {
+    const p = person(f.personId) || { name: 'Unknown' };
+    if (f.status !== 'open') {
+      return `<div class="card flag resolved"><h3>✓ ${esc(p.name)} is OK</h3>
+        <div class="muted small">${esc(f.resolution || 'Resolved')} · ${fmtWhen(f.resolvedAt)} (after ${f.missed} missed)</div></div>`;
+    }
+    const next = f.next;
+    return `<div class="card flag" data-flag="${f.id}">
+      <h3>⚠ ${esc(p.name)} didn't answer</h3>
+      <div class="small">${f.missed} missed call${f.missed > 1 ? 's' : ''} · last at ${fmtWhen(f.lastCallAt)} — ${esc(f.lastReason)}</div>
+      <div class="next">${next ? `Calling again at ${fmtWhen(next.at)}${theirTime(next.at, p.timezone)}` : 'No more automatic calls scheduled.'}</div>
+      <div class="row">
+        <input type="datetime-local" id="re-${f.id}" value="${toLocalInput(next ? next.at : Date.now() + 15 * 60e3)}" aria-label="Next call time">
+        <button onclick="reschedule('${f.id}')">${next ? 'Change next call' : 'Schedule next call'}</button>
+        <button onclick="flagDo('${f.id}','call-now')">Call now</button>
+        ${next ? `<button class="ghost" onclick="flagDo('${f.id}','stop-retrying')">Stop retrying</button>` : ''}
+        <button class="ghost" onclick="flagDo('${f.id}','resolve')">They're OK — dismiss</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+window.reschedule = (id) => {
+  const v = $('re-' + id).value;
+  if (!v) return toast('Pick a date and time');
+  act(() => api('POST', `/api/flags/${id}/reschedule`, { at: new Date(v).getTime() }), 'Next call set');
+};
+window.flagDo = (id, action) => act(() => api('POST', `/api/flags/${id}/${action}`, {}),
+  { 'call-now': 'Calling…', 'resolve': 'Dismissed', 'stop-retrying': 'Automatic calls stopped' }[action]);
+
+function renderPeople() {
+  if (!S.people.length) {
+    $('people').innerHTML = `<div class="card empty">Add the person you want to call, then give them a schedule.<br><br><button class="primary" onclick="openPerson()">+ Add person</button></div>`;
+    return;
+  }
+  $('people').innerHTML = S.people.map((p) => {
+    const scheds = S.schedules.filter((s) => s.personId === p.id);
+    const local = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', timeZone: p.timezone });
+    return `<div class="card person">
+      <div class="row between">
+        <div><h3>${esc(p.name)}</h3>
+          <div class="muted small">${esc(p.phone)} · ${esc(p.timezone.replace(/_/g, ' '))} (${local} there)${p.notes ? ' · ' + esc(p.notes) : ''}</div></div>
+        <div class="row">
+          <button onclick="callNow('${p.id}')">Call now</button>
+          <button class="ghost" onclick="openPerson('${p.id}')">Edit</button>
+        </div>
+      </div>
+      ${scheds.map((s) => `<div class="sched ${s.active ? '' : 'off'}">
+        <div class="info">
+          <div class="chips">${s.times.map((t) => {
+            const tz = s.timezone || p.timezone;
+            return `<span class="chip">${fmtTime(t)}${tz !== MY_TZ ? ` <span class="muted small" style="font-weight:400">${esc(tzLabel(tz))} · ${convertTime(t, tz, MY_TZ)} yours</span>` : ''}</span>`;
+          }).join('')}</div>
+          <div class="days">${DAYS.map((d, i) => `<span class="${s.days.includes(i) ? 'on' : ''}" title="${d}">${d[0]}</span>`).join('')}</div>
+          <div class="muted small">${s.times.length} call${s.times.length > 1 ? 's' : ''} a day, ${daysText(s.days).toLowerCase()} ·
+            ${s.mode === 'connect' ? 'connects to you' : s.style === 'script' ? `reads ${(s.lines || []).length} line${(s.lines || []).length === 1 ? '' : 's'}` : `chats naturally, ${(s.lines || []).length} topic${(s.lines || []).length === 1 ? '' : 's'}`} ·
+            ${s.retry.enabled ? `if missed: retry every ${s.retry.afterMinutes} min, up to ${s.retry.maxAttempts} calls` : 'if missed: flag only'}
+            ${s.active ? '' : ' · <strong>paused</strong>'}</div>
+        </div>
+        <div class="row">
+          <button class="ghost" onclick="toggleSched('${s.id}')">${s.active ? 'Pause' : 'Resume'}</button>
+          <button class="ghost" onclick="openSched('${p.id}','${s.id}')">Edit</button>
+        </div>
+      </div>`).join('')}
+      <div style="margin-top:12px"><button onclick="openSched('${p.id}')">+ Add call schedule</button></div>
+    </div>`;
+  }).join('');
+}
+window.callNow = (pid) => {
+  const s = S.schedules.find((x) => x.personId === pid && x.active) || S.schedules.find((x) => x.personId === pid);
+  act(() => api('POST', '/api/call-now', { personId: pid, scheduleId: s?.id }), 'Calling…');
+};
+window.toggleSched = (id) => { const s = sched(id); act(() => api('PUT', `/api/schedules/${id}`, { active: !s.active }), s.active ? 'Paused' : 'Resumed'); };
+
+function renderUpcoming() {
+  if (!S.upcoming.length) { $('upcoming').innerHTML = `<li class="muted">Nothing scheduled in the next 7 days.</li>`; return; }
+  $('upcoming').innerHTML = S.upcoming.slice(0, 12).map((u) => {
+    const p = person(u.personId) || { name: 'Unknown' };
+    const tag = u.reason === 'retry' ? `<span class="tag retry">retry ${u.attempt}</span>` : u.reason === 'manual' || u.reason === 'scheduled' ? '' : `<span class="tag">${esc(u.reason)}</span>`;
+    return `<li><span class="when">${fmtWhen(u.at)}</span><span class="what">${esc(p.name)} ${tag}<div class="muted small">${theirTime(u.at, p.timezone).replace(/^ · /, '')}</div></span></li>`;
+  }).join('');
+}
+
+function renderHistory() {
+  const done = S.calls.filter((c) => !['calling', 'ringing', 'in-progress'].includes(c.status)).slice(0, 25);
+  if (!done.length) { $('history').innerHTML = `<li class="muted">No calls yet.</li>`; return; }
+  $('history').innerHTML = done.map((c) => {
+    const p = person(c.personId) || { name: 'Removed' };
+    return `<li><span class="dot ${c.status}"></span><span class="when">${fmtWhen(c.startedAt)}</span>
+      <span class="what">${esc(p.name)} ${c.attempt > 1 ? `<span class="tag">try ${c.attempt}</span>` : ''}${c.reason === 'manual' ? ' <span class="tag">manual</span>' : ''}
+      <div class="muted small">${c.status === 'answered' ? 'Answered' : 'Missed'} — ${esc(c.detail || '')}</div>
+      ${c.summary ? `<div class="summary">${esc(c.summary)}</div>` : ''}
+      ${(c.concerns || []).map((x) => `<div class="concern">⚠ ${esc(x)}</div>`).join('')}
+      ${(c.chat || []).length ? `<details class="chat"><summary>Read the conversation</summary>${c.chat.map((m) => `<p><strong>${m.who === 'them' ? esc(p.name) : 'Daria'}:</strong> ${esc(m.text)}</p>`).join('')}</details>` : ''}
+      ${(c.turns || []).map((t) => `<div class="small turn"><span class="muted">${esc(t.q)}</span><br>“${esc(t.a)}”</div>`).join('')}</span></li>`;
+  }).join('');
+}
+
+function notifyNewFlags() {
+  const open = S.flags.filter((f) => f.status === 'open');
+  const key = (f) => f.id + ':' + f.missed;
+  if (seenFlags && localPref('notify') && 'Notification' in window && Notification.permission === 'granted') {
+    for (const f of open) if (!seenFlags.has(key(f))) {
+      const p = person(f.personId);
+      new Notification(`${p ? p.name : 'Someone'} didn't answer`, { body: f.lastReason });
+    }
+  }
+  seenFlags = new Set(open.map(key));
+}
+function localPref(k, v) {
+  try { if (v === undefined) return localStorage.getItem('carecall.' + k) === '1'; localStorage.setItem('carecall.' + k, v ? '1' : '0'); } catch { return false; }
+}
+
+// ---- person dialog ----
+const tzs = (Intl.supportedValuesOf ? Intl.supportedValuesOf('timeZone') : [Intl.DateTimeFormat().resolvedOptions().timeZone]);
+$('pTz').innerHTML = tzs.map((z) => `<option value="${z}">${z.replace(/_/g, ' ')}</option>`).join('');
+window.openPerson = (id) => {
+  editingPerson = id || null;
+  const p = id ? person(id) : null;
+  $('personTitle').textContent = p ? 'Edit ' + p.name : 'Add person';
+  $('pName').value = p?.name || ''; $('pPhone').value = p?.phone || ''; $('pNotes').value = p?.notes || '';
+  $('pTz').value = p?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  $('personErr').textContent = '';
+  const del = $('personForm').querySelector('[data-del]'); if (del) del.remove();
+  if (p) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'danger'; b.dataset.del = '1'; b.textContent = 'Delete';
+    b.style.marginRight = 'auto';
+    b.onclick = () => { if (confirm(`Delete ${p.name} and all their schedules?`)) act(async () => { await api('DELETE', `/api/people/${p.id}`); $('personDlg').close(); }, 'Deleted'); };
+    $('personForm').querySelector('.actions').prepend(b);
+  }
+  $('personDlg').showModal();
+};
+$('personForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const body = { name: $('pName').value, phone: $('pPhone').value, timezone: $('pTz').value, notes: $('pNotes').value };
+  try {
+    await api(editingPerson ? 'PUT' : 'POST', editingPerson ? `/api/people/${editingPerson}` : '/api/people', body);
+    $('personDlg').close();
+    if (!editingPerson) { const p = S.people[S.people.length - 1]; toast(`Added ${p.name}. Now set when to call.`); openSched(p.id); }
+  } catch (err) { $('personErr').textContent = err.message; }
+};
+
+// ---- schedule dialog ----
+// Wall-clock time in one zone -> UTC ms (same method as the server).
+function zonedToUtc(y, m, d, hh, mm, tz) {
+  const off = (ms) => {
+    const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      .formatToParts(new Date(ms)).map((x) => [x.type, x.value]));
+    return Date.UTC(+p.year, p.month - 1, +p.day, +p.hour, +p.minute, +p.second) - Math.floor(ms / 1000) * 1000;
+  };
+  const guess = Date.UTC(y, m - 1, d, hh, mm);
+  return guess - off(guess - off(guess));
+}
+const MY_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const tzLabel = (tz) => tz.split('/').pop().replace(/_/g, ' ');
+// "9:00 AM" in fromTz today, shown in toTz, with "(next day)" / "(day before)" when the date moves.
+function convertTime(hhmm, fromTz, toTz) {
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: fromTz }).format(new Date()).split('-').map(Number);
+  const [h, mi] = hhmm.split(':').map(Number);
+  const at = zonedToUtc(today[0], today[1], today[2], h, mi, fromTz);
+  const day = (tz) => new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(new Date(at));
+  const shift = day(toTz) > day(fromTz) ? ' (next day)' : day(toTz) < day(fromTz) ? ' (day before)' : '';
+  return new Date(at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', timeZone: toTz }) + shift;
+}
+function paintTzPreview() {
+  const tz = $('sTz').value || person(schedPerson).timezone;
+  const times = [...$('sTimes').querySelectorAll('input')].map((i) => i.value).filter(Boolean);
+  if (tz === MY_TZ || !times.length) { $('sTzPreview').textContent = tz === MY_TZ ? 'Same as your time zone.' : ''; return; }
+  $('sTzPreview').textContent = times.map((t) => `${fmtTime(t)} ${tzLabel(tz)} time = ${convertTime(t, tz, MY_TZ)} your time`).join(' · ')
+    + '. Days to repeat on are counted in this time zone too.';
+}
+$('sTz').onchange = paintTzPreview;
+$('sTimes').oninput = paintTzPreview;
+
+function timeRow(v) {
+  const d = document.createElement('div'); d.className = 't';
+  d.innerHTML = `<input type="time" value="${v}" required><button type="button" class="ghost" aria-label="Remove time">✕</button>`;
+  d.querySelector('button').onclick = () => { if ($('sTimes').children.length > 1) d.remove(); paintTzPreview(); };
+  $('sTimes').append(d);
+}
+function paintDays() {
+  $('sDays').innerHTML = DAYS.map((d, i) => `<button type="button" class="${schedDays.has(i) ? 'on' : ''}" data-d="${i}" aria-pressed="${schedDays.has(i)}">${d}</button>`).join('');
+  $('sDays').querySelectorAll('button').forEach((b) => b.onclick = () => { const i = +b.dataset.d; schedDays.has(i) ? schedDays.delete(i) : schedDays.add(i); paintDays(); });
+}
+document.querySelectorAll('[data-preset]').forEach((b) => b.onclick = () => { schedDays = new Set(b.dataset.preset.split(',').map(Number)); paintDays(); });
+$('addTime').onclick = () => { timeRow('12:00'); paintTzPreview(); };
+// Ready-made questions; each adds one line to the call.
+const TOPICS = [
+  ['👋 Greeting', "Hi {name}! It's Daria, {caller}'s helper. {caller} asked me to call and see how you're doing. How are you feeling today?"],
+  ['💊 Medicine', 'Did you remember to take your medicine today?'],
+  ['🍽 Meals', 'Have you had something to eat yet today?'],
+  ['😴 Nap', 'Did you get a little nap or some rest today?'],
+  ['🛏 Sleep', 'How did you sleep last night?'],
+  ['💧 Water', 'Have you been drinking enough water today?'],
+  ['🚶 Walk', 'Did you get to go outside or take a little walk today?'],
+  ['🤕 Pain', 'Is anything hurting or bothering you today?'],
+  ['🩺 Appointments', "Do you have any doctor's appointments coming up?"],
+  ['🛒 Needs', 'Is there anything you need, or anything you want me to tell {caller}?'],
+];
+const scriptLines = () => $('sLines').value.split('\n').map((l) => l.trim()).filter(Boolean);
+function paintTopics() {
+  const lines = scriptLines();
+  $('sTopics').innerHTML = TOPICS.map(([label, line], i) =>
+    `<button type="button" data-t="${i}" class="${lines.includes(line) ? 'on' : ''}" aria-pressed="${lines.includes(line)}">${esc(label)}</button>`).join('');
+  $('sTopics').querySelectorAll('button').forEach((b) => b.onclick = () => {
+    const line = TOPICS[+b.dataset.t][1];
+    const cur = scriptLines();
+    // The greeting always goes first; other questions go to the end.
+    const next = cur.includes(line) ? cur.filter((l) => l !== line) : (+b.dataset.t === 0 ? [line, ...cur] : [...cur, line]);
+    $('sLines').value = next.join('\n');
+    paintTopics();
+  });
+}
+$('sLines').oninput = paintTopics;
+$('sAddCustom').onclick = () => {
+  let q = $('sCustom').value.trim();
+  if (!q) return;
+  if (!/[?.!]$/.test(q)) q += '?';
+  $('sLines').value = [...scriptLines(), q].join('\n');
+  $('sCustom').value = '';
+  paintTopics();
+};
+$('sCustom').onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); $('sAddCustom').click(); } };
+
+function syncSchedForm() {
+  const mode = document.querySelector('input[name=mode]:checked').value;
+  $('checkinOpts').style.display = mode === 'checkin' ? '' : 'none';
+  $('retryRow').style.opacity = $('sRetry').checked ? 1 : .4;
+  $('sAfter').disabled = $('sMax').disabled = !$('sRetry').checked;
+  const chat = document.querySelector('input[name=style]:checked').value === 'chat';
+  $('sLinesLabel').textContent = chat ? 'Topics it should cover, one per row' : 'The full call, one line per row';
+  $('styleChatHint').textContent = S.brain
+    ? `${S.brainName} has a real conversation: small talk, follow-up questions, and it covers your topics along the way. It flags anything worrying and sends you a summary.`
+    : 'Needs a free Groq key: run setup-groq.sh in the CareCall folder. Until then, calls follow your lines.';
+  $('sLinesHint').textContent = chat ? 'These guide the chat. It asks them in its own words, in whatever order feels natural.' : S.conversation
+    ? 'After each line it waits for them to answer before saying the next. {name} and {caller} are filled in for you.'
+    : 'The call link is still starting, so right now calls read the lines with short pauses instead of waiting for answers.';
+}
+document.querySelectorAll('input[name=mode], input[name=style]').forEach((r) => r.onchange = syncSchedForm);
+$('sRetry').onchange = syncSchedForm;
+window.openSched = (pid, sid) => {
+  schedPerson = pid; editingSched = sid || null;
+  const s = sid ? sched(sid) : null;
+  $('schedTitle').textContent = `${s ? 'Edit' : 'New'} call schedule for ${person(pid).name}`;
+  $('sTimes').innerHTML = ''; (s?.times || ['09:00']).forEach(timeRow);
+  const p = person(pid);
+  $('sTz').innerHTML = `<option value="">${esc(p.name)}'s time (${esc(tzLabel(p.timezone))})</option>`
+    + (MY_TZ !== p.timezone ? `<option value="${MY_TZ}">My time (${esc(tzLabel(MY_TZ))})</option>` : '')
+    + `<optgroup label="Other time zones">${tzs.map((z) => `<option value="${z}">${esc(z.replace(/_/g, ' '))}</option>`).join('')}</optgroup>`;
+  $('sTz').value = s?.timezone || '';
+  paintTzPreview();
+  schedDays = new Set(s?.days || [0, 1, 2, 3, 4, 5, 6]); paintDays();
+  document.querySelector(`input[name=mode][value=${s?.mode || 'checkin'}]`).checked = true;
+  document.querySelector(`input[name=style][value=${s?.style || 'chat'}]`).checked = true;
+  $('sLines').value = (s?.lines || [TOPICS[0][1], TOPICS[1][1], TOPICS[2][1]]).join('\n');
+  $('sCustom').value = '';
+  paintTopics();
+  $('sGoodbye').value = s?.goodbye || S.defaults.goodbye;
+  $('sRetry').checked = s ? s.retry.enabled : true;
+  $('sAfter').value = s?.retry.afterMinutes || 15; $('sMax').value = s?.retry.maxAttempts || 3;
+  $('sActive').checked = s ? s.active : true;
+  $('schedErr').textContent = '';
+  const del = $('schedForm').querySelector('[data-del]'); if (del) del.remove();
+  if (s) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'danger'; b.dataset.del = '1'; b.textContent = 'Delete'; b.style.marginRight = 'auto';
+    b.onclick = () => { if (confirm('Delete this schedule?')) act(async () => { await api('DELETE', `/api/schedules/${s.id}`); $('schedDlg').close(); }, 'Schedule deleted'); };
+    $('schedForm').querySelector('.actions').prepend(b);
+  }
+  syncSchedForm();
+  $('schedDlg').showModal();
+};
+$('schedForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const body = {
+    personId: schedPerson,
+    times: [...$('sTimes').querySelectorAll('input')].map((i) => i.value).filter(Boolean),
+    timezone: $('sTz').value,
+    days: [...schedDays],
+    mode: document.querySelector('input[name=mode]:checked').value,
+    lines: $('sLines').value,
+    style: document.querySelector('input[name=style]:checked').value,
+    goodbye: $('sGoodbye').value,
+    retry: { enabled: $('sRetry').checked, afterMinutes: +$('sAfter').value, maxAttempts: +$('sMax').value },
+    active: $('sActive').checked,
+  };
+  try {
+    await api(editingSched ? 'PUT' : 'POST', editingSched ? `/api/schedules/${editingSched}` : '/api/schedules', body);
+    $('schedDlg').close(); toast('Schedule saved');
+  } catch (err) { $('schedErr').textContent = err.message; }
+};
+
+// ---- settings ----
+$('settingsBtn').onclick = () => {
+  $('cName').value = S.settings.callerName; $('cPhone').value = S.settings.callerPhone; $('cSms').checked = S.settings.smsAlerts;
+  $('cVoice').innerHTML = Object.entries(S.voices).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('');
+  $('cVoice').value = S.settings.voice;
+  $('cPush').checked = S.settings.pushAlerts; $('cTopic').value = S.settings.ntfyTopic;
+  $('cSms').disabled = S.mode !== 'live';
+  $('smsHint').textContent = S.mode === 'live' ? 'Sent from your Twilio number.' : 'Available once Twilio is set up (live mode).';
+  $('cNotify').checked = localPref('notify');
+  $('settingsErr').textContent = '';
+  $('settingsDlg').showModal();
+};
+$('settingsForm').onsubmit = async (e) => {
+  e.preventDefault();
+  try {
+    await api('POST', '/api/settings', { callerName: $('cName').value, callerPhone: $('cPhone').value, smsAlerts: $('cSms').checked, voice: $('cVoice').value, pushAlerts: $('cPush').checked });
+    localPref('notify', $('cNotify').checked);
+    if ($('cNotify').checked && 'Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+    $('settingsDlg').close(); toast('Settings saved');
+  } catch (err) { $('settingsErr').textContent = err.message; }
+};
+
+$('copyTopic').onclick = () => { $('cTopic').select(); navigator.clipboard?.writeText($('cTopic').value).then(() => toast('Topic copied'), () => {}); };
+$('testPush').onclick = () => act(() => api('POST', '/api/test-alert', {}), 'Test sent. Check your phone');
+$('addPersonBtn').onclick = () => openPerson();
+document.querySelectorAll('[data-close]').forEach((b) => b.onclick = () => b.closest('dialog').close());
+
+refresh();
+setInterval(refresh, 3000);
+</script>
+</body>
+</html>

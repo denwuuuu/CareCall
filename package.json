@@ -1,0 +1,16 @@
+{
+  "name": "carecall",
+  "version": "1.0.0",
+  "description": "Automatic check-in calls for older relatives at set times, with missed-call alerts and retries.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.3.0"
+  }
+}
