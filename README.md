@@ -1,3 +1,5 @@
+<p align="center"><img src="logo/carecall-logo.svg" alt="CareCall" width="520"></p>
+
 # CareCall
 
 Automatic check-in calls for older relatives at times you choose. If they don't

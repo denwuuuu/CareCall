@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 360" width="1240" height="360">
+  <title>CareCall</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3a8a74"/>
+      <stop offset="1" stop-color="#245a4b"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(40 40) scale(0.546875)">
+    <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+    <path transform="translate(64 66) scale(16)" fill="#ffffff"
+          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+    <path transform="translate(154 140) scale(8.5)" fill="#2f6f5e"
+          d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+    <g fill="none" stroke="#e8a93a" stroke-width="15" stroke-linecap="round">
+      <path d="M286 176 a40 40 0 0 1 40 40"/>
+      <path d="M288 140 a76 76 0 0 1 74 74"/>
+    </g>
+  </g>
+  <text x="370" y="215" font-family="-apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif" font-size="150" font-weight="800" letter-spacing="-4">
+    <tspan fill="#1f2328">Care</tspan><tspan fill="#2f6f5e">Call</tspan>
+  </text>
+  <text x="376" y="285" font-family="-apple-system, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif" font-size="44" font-weight="500" fill="#6a6f76">Every day, someone checks in.</text>
+</svg>
