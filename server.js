@@ -288,8 +288,9 @@ const xml = (s) => String(s).replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&g
 
 const hook = (call, kind, arg) => `${publicUrl}/twilio/${kind}/${call.id}${arg === undefined ? '' : '/' + arg}`;
 const say = (call, text) => `<Say voice="${xml(call.voice)}">${xml(text)}</Say>`;
+// bargeIn off: Daria finishes her sentence, then listens; a sound mid-sentence doesn't cut her off.
 const listen = (call, next, seconds, inner = '') =>
-  `<Gather input="speech" language="en-US" timeout="${seconds}" speechTimeout="${END_OF_SPEECH_S}" action="${xml(hook(call, 'turn', next))}" method="POST">${inner}</Gather>`;
+  `<Gather input="speech" language="en-US" bargeIn="false" timeout="${seconds}" speechTimeout="${END_OF_SPEECH_S}" action="${xml(hook(call, 'turn', next))}" method="POST">${inner}</Gather>`;
 
 function twimlFor(call, p) {
   if (call.mode === 'connect') {
